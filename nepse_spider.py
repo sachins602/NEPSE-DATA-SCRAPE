@@ -44,6 +44,7 @@ def historic_data_table_creator():
     # cursor.execute("CREATE DATABASE "+database_name) #remove this code if you have already created a Db named 'stocks' 
     for sector in sectors:
         cursor.execute("CREATE TABLE IF NOT EXISTS "+sector +" (`Scrip` VARCHAR(10),`Time` DOUBLE, `Close` VARCHAR(20), `Open` VARCHAR(20), `High` VARCHAR(20), `Low` VARCHAR(20), `Volume` VARCHAR(20))")
+        cursor.execute("DELETE FROM " + sector)
     db.commit()
     cursor.close()
     db.close()
@@ -54,11 +55,19 @@ def other_data_table_creator():
     cursor.execute("CREATE TABLE IF NOT EXISTS top_gainers (`id` INT NOT NULL PRIMARY KEY,`symbol` VARCHAR(30), `company` VARCHAR(200), `ltp` VARCHAR(10), `point_change` VARCHAR(10), `percent_change` VARCHAR(10))")
     cursor.execute("CREATE TABLE IF NOT EXISTS top_losers (`id` INT NOT NULL PRIMARY KEY,`symbol` VARCHAR(30), `company` VARCHAR(200), `ltp` VARCHAR(10), `point_change` VARCHAR(10), `percent_change` VARCHAR(10))")
     cursor.execute("CREATE TABLE IF NOT EXISTS sub_indices (`sector` VARCHAR(200),`turnover` VARCHAR(50), `close` VARCHAR(50), `point` VARCHAR(10), percent_change VARCHAR(10))")
+    cursor.execute("DELETE FROM `top_gainers`")
+    cursor.execute("DELETE FROM `top_losers`")
+    cursor.execute("DELETE FROM `sub_indices`")
     db.commit()
     cursor.close()
     db.close()
 
 def insert_company_detail():
+    db = mysql.connector.connect(
+            host='localhost', user='root', password='', database="stock")
+    cursor = db.cursor()
+    query = "DELETE FROM company_details"
+    cursor.execute(query)
     names = ['ACLBSL', 'ALBSL', 'CBBL', 'CLBSL', 'DDBL', 'FMDBL', 'FOWAD', 'GMFBS', 'GILB', 'GBLBS', 'GLBSL', 'ILBS',
              'JALPA', 'JSLBB', 'JBLB', 'KMCDB', 'KLBSL', 'LLBS', 'MLBSL', 'MSLB', 'MKLB', 'MLBS', 'MERO', 'MMFDB',
              'MLBBL', 'NSLB', 'NLBBL', 'NESDO', 'NICLBSL', 'NUBL', 'RULB', 'RMDC', 'RSDC', 'SABSL', 'SDLBSL', 'SMATA',
@@ -92,9 +101,7 @@ def insert_company_detail():
         new_list = [n for n in new_list if n != '']
         final_detail = [name]+company_name+new_list[0:13]
         company_ = tuple(final_detail)
-        db = mysql.connector.connect(
-            host='localhost', user='root', password='', database="stock")
-        cursor = db.cursor()
+        
         query = "INSERT INTO company_details VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         cursor.execute(query, company_)
         db.commit()
@@ -192,7 +199,7 @@ def historic_data_populator():
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/46.0.2490.80'
    }
     sectors = {
-
+            'corporate_debentures': ['NICAD8283'],
             'microfinance':['ACLBSL','ALBSL','CBBL','CLBSL','DDBL','FMDBL','FOWAD','GMFBS','GILB','GBLBS','GLBSL','ILBS','JALPA','JSLBB','JBLB','KMCDB','KLBSL','LLBS','MLBSL','MSLB','MKLB','MLBS','MERO','MMFDB','MLBBL','NSLB','NLBBL','NESDO','NICLBSL','NUBL','RULB','RMDC','RSDC','SABSL','SDLBSL','SMATA','SLBSL','SKBBL','SMFDB','SMB','SWBBL','SMFBS','SLBBL','USLB','VLBS','WNLB'],
             'commercial_banks':['ADBL','BOKL','CCBL','CZBIL','CBL','EBL','GBIME','KBL','LBL','MBL','MEGA','NABIL','NBL','NCCB','SBI','NICA','NMB','PRVU','PCBL','SANIMA','SBL','SCB','SRBL'],
             'non_life_insurance':['AIL','EIC','GIC','HGI','IGI','LGIL','NIL','NICL','NLG','PRIN','PIC','PICL','RBCL','SIC','SGI','SICL','SIL','UIC'],
@@ -215,7 +222,7 @@ def historic_data_populator():
             scrip = name
             data_list = []
             start_time = 1325376000  # 2012 january 1
-            end_time = 1661299200
+            end_time = 1662336000
             # https://nepsealpha.com/trading/1/history?symbol=ADBL&resolution=1D&from=1629072000&to=1661299200&pass=ok&force=23745&currencyCode=NRS
             response = requests.get(
                 'https://nepsealpha.com/trading/1/history?symbol=' + scrip + '&resolution=1D&from=' + str(
